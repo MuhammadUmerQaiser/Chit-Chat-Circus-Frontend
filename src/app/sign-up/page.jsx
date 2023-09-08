@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import AuthenticationLayout from '../../components/Authentication/Layout';
+import AuthenticationLayout from '../../components/Authentication/AuthenticationLayout';
 import LoaderButton from '../../components/LoaderButton';
 import avatar1 from "../../../public/images/avatar1.png";
 import avatar2 from "../../../public/images/avatar2.png";
@@ -9,7 +9,7 @@ import avatar3 from "../../../public/images/avatar3.png";
 import avatar4 from "../../../public/images/avatar4.png";
 import { useState } from "react";
 import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs'
-import { Formik, useFormik } from 'formik';
+import { useFormik } from 'formik';
 import * as yup from 'yup';
 import { toast } from "react-toastify";
 
@@ -144,7 +144,8 @@ export default function Login() {
                   <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.password}</span>
                 )}
                 <div
-                  className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer"
+                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${passwordToggle ? 'text-gray-600' : 'text-primary-600'
+                    }`}
                   onClick={() => setPasswordToggle(!passwordToggle)}
                 >
                   {!passwordToggle ? <BsEyeFill /> : <BsEyeSlashFill />}
@@ -174,7 +175,8 @@ export default function Login() {
                   <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.passwordConfirmation}</span>
                 )}
                 <div
-                  className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer"
+                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${passwordConfirmationToggle ? 'text-gray-600' : 'text-primary-600'
+                    }`}
                   onClick={() => setPasswordConfirmationToggle(!passwordConfirmationToggle)}
                 >
                   {!passwordConfirmationToggle ? <BsEyeFill /> : <BsEyeSlashFill />}
