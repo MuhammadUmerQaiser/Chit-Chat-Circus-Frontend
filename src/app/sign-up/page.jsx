@@ -1,59 +1,73 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import AuthenticationLayout from '../../components/Authentication/AuthenticationLayout';
-import LoaderButton from '../../components/LoaderButton';
+import { useRouter } from "next/navigation";
+import AuthenticationLayout from "../../components/Authentication/AuthenticationLayout";
+import LoaderButton from "../../components/LoaderButton";
 import avatar1 from "../../../public/images/avatar1.png";
 import avatar2 from "../../../public/images/avatar2.png";
 import avatar3 from "../../../public/images/avatar3.png";
 import avatar4 from "../../../public/images/avatar4.png";
-import { useState } from "react";
-import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs'
-import { useFormik } from 'formik';
-import * as yup from 'yup';
+import { useState, useEffect } from "react";
+import { BsEyeFill, BsEyeSlashFill } from "react-icons/bs";
+import { useFormik } from "formik";
+import * as yup from "yup";
 import { toast } from "react-toastify";
+import axios from "../../components/Axios/AxiosInstance";
 
 export default function Login() {
+  const router = useRouter();
   const [continueForm, setContinueForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(1);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [passwordToggle, setPasswordToggle] = useState(false);
-  const [passwordConfirmationToggle, setPasswordConfirmationToggle] = useState(false);
+  const [passwordConfirmationToggle, setPasswordConfirmationToggle] =
+    useState(false);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (token) {
+      router.push("/");
+    }
+  }, []);
 
   const SignUpFormikSchema = yup.object({
-    name: yup.string().trim().required('Name is required'),
+    name: yup.string().trim().required("Name is required"),
     email: yup
       .string()
-      .email('Must be a valid email')
-      .required('Email is required'),
+      .email("Must be a valid email")
+      .required("Email is required"),
     password: yup
       .string()
       .trim()
-      .min(8, 'Password must be at least 8 characters')
-      .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-      .matches(/\d{3,}/, 'Password must contain at least three numbers')
-      .matches(/[a-zA-Z\d]*[a-zA-Z][a-zA-Z\d]*[!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/, 'Password must contain at least one special character')
-      .required('Password is required'),
+      .min(8, "Password must be at least 8 characters")
+      .matches(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .matches(/\d{3,}/, "Password must contain at least three numbers")
+      .matches(
+        /[a-zA-Z\d]*[a-zA-Z][a-zA-Z\d]*[!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/,
+        "Password must contain at least one special character"
+      )
+      .required("Password is required"),
     passwordConfirmation: yup
       .string()
       .trim()
-      .oneOf([yup.ref('password'), null], 'Passwords must match')
-      .required('Confirm password is required'),
-  })
+      .oneOf([yup.ref("password"), null], "Passwords must match")
+      .required("Confirm password is required"),
+  });
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      name: '',
-      password: '',
-      passwordConfirmation: '',
+      email: "",
+      name: "",
+      password: "",
+      passwordConfirmation: "",
     },
     onSubmit: () => {
-      setContinueForm(!continueForm)
+      setContinueForm(!continueForm);
       setName(formik.values.name);
       setEmail(formik.values.email);
       setPassword(formik.values.password);
@@ -65,8 +79,38 @@ export default function Login() {
   const registerUserAccount = (e) => {
     e.preventDefault();
     setIsLoading(!isLoading);
-    toast.success('Done')
-  }
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("password", password);
+    formData.append("password_confirmation", passwordConfirmation);
+    formData.append("user_image_id", selectedAvatar);
+
+    axios
+      .post("register", formData)
+      .then((response) => {
+        setIsLoading(false);
+        setContinueForm(!continueForm);
+        if (response?.data?.status == 200) {
+          toast.success(response?.data?.message);
+          router.push("/login");
+        } else {
+          toast.error(response?.data?.message);
+        }
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        setContinueForm(!continueForm);
+        if (error?.response?.data?.errors) {
+          const errors = error?.response?.data?.errors;
+          const firstErrorField = Object.keys(errors)[0];
+          const firstErrorMessage = errors[firstErrorField][0];
+          toast.error(firstErrorMessage);
+        } else {
+          toast.error("An error occured, ", error?.message);
+        }
+      });
+  };
 
   return (
     <AuthenticationLayout>
@@ -96,7 +140,9 @@ export default function Login() {
                 onBlur={formik.handleBlur}
               />
               {formik.errors.name && formik.touched.name && (
-                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.name}</span>
+                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                  {formik.errors.name}
+                </span>
               )}
             </div>
             <div>
@@ -118,7 +164,9 @@ export default function Login() {
                 onBlur={formik.handleBlur}
               />
               {formik.errors.email && formik.touched.email && (
-                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.email}</span>
+                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                  {formik.errors.email}
+                </span>
               )}
             </div>
             <div>
@@ -130,7 +178,7 @@ export default function Login() {
               </label>
               <div className="relative">
                 <input
-                  type={!passwordToggle ? 'password' : 'text'}
+                  type={!passwordToggle ? "password" : "text"}
                   name="password"
                   id="password"
                   placeholder="••••••••"
@@ -141,11 +189,14 @@ export default function Login() {
                   onBlur={formik.handleBlur}
                 />
                 {formik.errors.password && formik.touched.password && (
-                  <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.password}</span>
+                  <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                    {formik.errors.password}
+                  </span>
                 )}
                 <div
-                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${passwordToggle ? 'text-gray-600' : 'text-primary-600'
-                    }`}
+                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${
+                    passwordToggle ? "text-gray-600" : "text-primary-600"
+                  }`}
                   onClick={() => setPasswordToggle(!passwordToggle)}
                 >
                   {!passwordToggle ? <BsEyeFill /> : <BsEyeSlashFill />}
@@ -161,7 +212,7 @@ export default function Login() {
               </label>
               <div className="relative">
                 <input
-                  type={!passwordConfirmationToggle ? 'password' : 'text'}
+                  type={!passwordConfirmationToggle ? "password" : "text"}
                   name="passwordConfirmation"
                   id="passwordConfirmation"
                   placeholder="••••••••"
@@ -171,15 +222,27 @@ export default function Login() {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 />
-                {formik.errors.passwordConfirmation && formik.touched.passwordConfirmation && (
-                  <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.passwordConfirmation}</span>
-                )}
+                {formik.errors.passwordConfirmation &&
+                  formik.touched.passwordConfirmation && (
+                    <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                      {formik.errors.passwordConfirmation}
+                    </span>
+                  )}
                 <div
-                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${passwordConfirmationToggle ? 'text-gray-600' : 'text-primary-600'
-                    }`}
-                  onClick={() => setPasswordConfirmationToggle(!passwordConfirmationToggle)}
+                  className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${
+                    passwordConfirmationToggle
+                      ? "text-gray-600"
+                      : "text-primary-600"
+                  }`}
+                  onClick={() =>
+                    setPasswordConfirmationToggle(!passwordConfirmationToggle)
+                  }
                 >
-                  {!passwordConfirmationToggle ? <BsEyeFill /> : <BsEyeSlashFill />}
+                  {!passwordConfirmationToggle ? (
+                    <BsEyeFill />
+                  ) : (
+                    <BsEyeSlashFill />
+                  )}
                 </div>
               </div>
             </div>
@@ -189,7 +252,7 @@ export default function Login() {
               disabled={!formik.isValid}
               type="submit"
             >
-              {formik.isValid ? 'Continue' : 'Please fill all details'}
+              {formik.isValid ? "Continue" : "Please fill all details"}
             </button>
             <p className="text-sm font-light text-gray-500 dark:text-gray-400">
               Already have an account.
@@ -207,7 +270,9 @@ export default function Login() {
               <div className="mx-4">
                 <Image
                   src={avatar1}
-                  className={`w-32 rounded-full ${selectedAvatar == 1 ? 'ring-2 ring-gray-800' : ''}`}
+                  className={`w-32 rounded-full ${
+                    selectedAvatar == 1 ? "ring-2 ring-gray-800" : ""
+                  }`}
                   alt="Avatar"
                   width={100}
                   height={24}
@@ -218,7 +283,9 @@ export default function Login() {
               <div className="mx-4">
                 <Image
                   src={avatar2}
-                  className={`w-32 rounded-full ${selectedAvatar == 2 ? 'ring-2 ring-gray-800' : ''}`}
+                  className={`w-32 rounded-full ${
+                    selectedAvatar == 2 ? "ring-2 ring-gray-800" : ""
+                  }`}
                   alt="Avatar"
                   width={100}
                   height={24}
@@ -231,7 +298,9 @@ export default function Login() {
               <div className="mx-4">
                 <Image
                   src={avatar3}
-                  className={`w-32 rounded-full ${selectedAvatar == 3 ? 'ring-2 ring-gray-800' : ''}`}
+                  className={`w-32 rounded-full ${
+                    selectedAvatar == 3 ? "ring-2 ring-gray-800" : ""
+                  }`}
                   alt="Avatar"
                   width={100}
                   height={24}
@@ -242,7 +311,9 @@ export default function Login() {
               <div className="mx-4">
                 <Image
                   src={avatar4}
-                  className={`w-32 rounded-full ${selectedAvatar == 4 ? 'ring-2 ring-gray-800' : ''}`}
+                  className={`w-32 rounded-full ${
+                    selectedAvatar == 4 ? "ring-2 ring-gray-800" : ""
+                  }`}
                   alt="Avatar"
                   width={100}
                   height={24}
@@ -251,13 +322,16 @@ export default function Login() {
                 />
               </div>
             </div>
-            {!isLoading ?
-              (<button
+            {!isLoading ? (
+              <button
                 onClick={(e) => registerUserAccount(e)}
                 className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
               >
                 {!continueForm ? "Continue" : "Create an account"}
-              </button>) : (<LoaderButton />)}
+              </button>
+            ) : (
+              <LoaderButton />
+            )}
           </form>
         )}
       </div>

@@ -1,41 +1,65 @@
-'use client';
+"use client";
 import Link from "next/link";
-import AuthenticationLayout from '../../components/Authentication/AuthenticationLayout';
-import LoaderButton from '../../components/LoaderButton';
+import AuthenticationLayout from "../../components/Authentication/AuthenticationLayout";
+import LoaderButton from "../../components/LoaderButton";
 import { useState } from "react";
-import { useRouter } from 'next/navigation'
-import { useFormik } from 'formik';
-import * as yup from 'yup';
+import { useRouter } from "next/navigation";
+import { useFormik } from "formik";
+import * as yup from "yup";
 import { toast } from "react-toastify";
+import axios from "../../components/Axios/AxiosInstance";
 
 export default function Login() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
 
   const ForgotPasswordFormikSchema = yup.object({
     email: yup
       .string()
-      .email('Must be a valid email')
-      .required('Email is required'),
-  })
+      .email("Must be a valid email")
+      .required("Email is required"),
+  });
 
   const formik = useFormik({
     initialValues: {
-      email: '',
+      email: "",
     },
     onSubmit: () => {
       setEmail(formik.values.email);
-      forgotPassword()
+      forgotPassword();
     },
     validationSchema: ForgotPasswordFormikSchema,
   });
 
   const forgotPassword = () => {
     setIsLoading(!isLoading);
-    toast.success('Done')
-    router.push('/reset-password')
-  }
+    const formData = new FormData();
+    formData.append("email", formik.values.email);
+
+    axios
+      .post("forgot-password", formData)
+      .then((response) => {
+        setIsLoading(false);
+        if (response?.data?.status == 200) {
+          toast.success(response?.data?.message);
+          router.push("/reset-password");
+        } else {
+          toast.error(response?.data?.message);
+        }
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        if (error?.response?.data?.errors) {
+          const errors = error?.response?.data?.errors;
+          const firstErrorField = Object.keys(errors)[0];
+          const firstErrorMessage = errors[firstErrorField][0];
+          toast.error(firstErrorMessage);
+        } else {
+          toast.error("An error occured, ", error?.message);
+        }
+      });
+  };
   return (
     <AuthenticationLayout>
       <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
@@ -62,7 +86,9 @@ export default function Login() {
               onBlur={formik.handleBlur}
             />
             {formik.errors.email && formik.touched.email && (
-              <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.email}</span>
+              <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                {formik.errors.email}
+              </span>
             )}
           </div>
           {!isLoading ? (
@@ -70,7 +96,7 @@ export default function Login() {
               type="submit"
               onClick={(e) => {
                 e.preventDefault();
-                formik.handleSubmit(e)
+                formik.handleSubmit(e);
               }}
               className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >

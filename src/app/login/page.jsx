@@ -1,47 +1,81 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
-import AuthenticationLayout from '../../components/Authentication/AuthenticationLayout';
-import LoaderButton from '../../components/LoaderButton';
-import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs'
-import { useFormik } from 'formik';
-import * as yup from 'yup';
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import AuthenticationLayout from "../../components/Authentication/AuthenticationLayout";
+import LoaderButton from "../../components/LoaderButton";
+import { BsEyeFill, BsEyeSlashFill } from "react-icons/bs";
+import { useFormik } from "formik";
+import * as yup from "yup";
 import { toast } from "react-toastify";
+import axios from "../../components/Axios/AxiosInstance";
 
 export default function Login() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [passwordToggle, setPasswordToggle] = useState(false);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (token) {
+      router.push("/");
+    }
+  }, []);
 
   const LoginFormikSchema = yup.object({
     email: yup
       .string()
-      .email('Must be a valid email')
-      .required('Email is required'),
-    password: yup
-      .string()
-      .trim()
-      .required('Password is required'),
-  })
+      .email("Must be a valid email")
+      .required("Email is required"),
+    password: yup.string().trim().required("Password is required"),
+  });
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     onSubmit: () => {
       setEmail(formik.values.email);
       setPassword(formik.values.password);
-      userLogin()
+      userLogin();
     },
     validationSchema: LoginFormikSchema,
   });
 
   const userLogin = () => {
     setIsLoading(!isLoading);
-    toast.success('Done')
-  }
+    const formData = new FormData();
+    formData.append("email", formik.values.email);
+    formData.append("password", formik.values.password);
+
+    axios
+      .post("login", formData)
+      .then((response) => {
+        setIsLoading(false);
+        if (response?.data?.status == 200) {
+          localStorage.setItem('token', response?.data?.token)
+          localStorage.setItem('user', JSON.stringify(response?.data?.data))
+          toast.success(response?.data?.message);
+          router.push("/");
+        } else {
+          toast.error(response?.data?.message);
+        }
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        if (error?.response?.data?.errors) {
+          const errors = error?.response?.data?.errors;
+          const firstErrorField = Object.keys(errors)[0];
+          const firstErrorMessage = errors[firstErrorField][0];
+          toast.error(firstErrorMessage);
+        } else {
+          toast.error(error?.response?.data?.message);
+        }
+      });
+  };
 
   return (
     <AuthenticationLayout>
@@ -69,7 +103,9 @@ export default function Login() {
               onBlur={formik.handleBlur}
             />
             {formik.errors.email && formik.touched.email && (
-              <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.email}</span>
+              <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                {formik.errors.email}
+              </span>
             )}
           </div>
           <div>
@@ -81,7 +117,7 @@ export default function Login() {
             </label>
             <div className="relative">
               <input
-                type={!passwordToggle ? 'password' : 'text'}
+                type={!passwordToggle ? "password" : "text"}
                 name="password"
                 id="password"
                 placeholder="••••••••"
@@ -92,11 +128,14 @@ export default function Login() {
                 onBlur={formik.handleBlur}
               />
               {formik.errors.password && formik.touched.password && (
-                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">{formik.errors.password}</span>
+                <span className="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1">
+                  {formik.errors.password}
+                </span>
               )}
               <div
-                className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${passwordToggle ? 'text-gray-600' : 'text-primary-600'
-                  }`}
+                className={`absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer ${
+                  passwordToggle ? "text-gray-600" : "text-primary-600"
+                }`}
                 onClick={() => setPasswordToggle(!passwordToggle)}
               >
                 {!passwordToggle ? <BsEyeFill /> : <BsEyeSlashFill />}
@@ -104,8 +143,7 @@ export default function Login() {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex items-start">
-            </div>
+            <div className="flex items-start"></div>
             <Link
               href="/forgot-password"
               className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"
@@ -122,7 +160,7 @@ export default function Login() {
               type="submit"
               className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              {formik.isValid ? 'Sign in' : 'Please fill all details'}
+              {formik.isValid ? "Sign in" : "Please fill all details"}
             </button>
           ) : (
             <LoaderButton />
