@@ -61,6 +61,7 @@ export default function Home() {
         <ChatComponent
           someOneChatOpen={isSomeoneChatOpen}
           userDetailOfOpenedChat={userDetailOfOpenedChat}
+          loggedInUser={user}
         />
       </div>
     </div>
